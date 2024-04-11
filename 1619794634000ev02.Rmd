@@ -1,0 +1,141 @@
+---
+title: "ev02"
+author: "Andrea Marisol Salcedo Vázquez"
+matricula: "A00831510"
+link_video: "https://youtu.be/Uwn1xaN3Vsk"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r}
+#Instalamos las librerias
+library(Biostrings)
+library(seqinr)
+library(adegenet)
+library(ape)
+library(ggtree)
+library(DECIPHER)
+library(viridis)
+library(ggplot2)
+library(msa)
+library(RColorBrewer)
+```
+
+Obtener secuencias de virus
+
+```{r}
+virus <- c( "MZ021688","MW600461","MW592707","MT470108","MW332230","MT786859","OD906801","MW642250","MW976782","LR963044","MW633906","MT470219","MT511075","MT889692","MW595908","MW494424","MZ026855","MT517421","MT324062","LR883020")
+#Obtener las secuencias
+virusDNA <-read.GenBank(virus)
+
+```
+
+Calcular longitud de nucleotidos
+```{r}
+virusLongitud<-c()
+for (i in 1:20){
+  virusLongitud<-c(virusLongitud, length(virusDNA[i][[1]]))
+}
+```
+Grafica de comparacion de nucleotidos
+```{r}
+percentatcg=virus
+par(mfrow=c(1,3))
+barplot(height =virusLongitud , names =percentatcg,
+        col =palette("Classic Tableau"),
+        xlab ="Secuencia",
+        ylab ="Nucleotidos",
+        main = "Comparacion de nucleotidos",
+        ylim = c(0,40000)
+        )
+```
+Analisis jerarquico global
+```{r}
+#3 Crear el archivo DNAbin con el vector de los virus
+str(virusDNA)
+```
+
+Concentrar las secuencias en un archivo
+```{r}
+write.dna(virusDNA, file = "virusDNA.fasta", format = "fasta", append = FALSE, nbcol = 6, colsep = " ", colw = 10)
+```
+Cargar las secuencias
+```{r}
+virus_seq_not_align <- readDNAStringSet("virusDNA.fasta", format = "fasta")
+virus_seq_not_align
+```
+Alineamiento de las secuencias
+```{r}
+virus_seq_not_align <- OrientNucleotides(virus_seq_not_align)
+virus_seq_align <- AlignSeqs(virus_seq_not_align)
+```
+Visualizar el resultado del alineamiento.
+```{r}
+BrowseSeqs(virus_seq_align, highlight = 0)
+```
+Guardar el resultado.
+```{r}
+writeXStringSet(virus_seq_align, file="virus_seq_align.fasta")
+```
+Obtener el nuevo archivo.
+```{r}
+virus_aligned <- read.alignment("virus_seq_align.fasta", format ="fasta")
+```
+Crear una matriz de distancia.
+```{r}
+matriz_distancia <- dist.alignment(virus_aligned, matrix = "similarity")
+```
+Vizualiza la matriz de distancia: donde sombras más oscuras de gris significan una mayor distancia.
+```{r}
+temp <- as.data.frame(as.matrix(matriz_distancia))
+table.paint(temp, cleg = 0, clabel.col = .5, clabel.row = .5) + scale_color_viridis()
+```
+Creacion del arbol con el paquete ape:
+```{r}
+virus_tree<-nj(matriz_distancia)
+class(virus_tree)
+virus_tree<-ladderize(virus_tree)
+```
+Plot del arbol
+```{r}
+plot(virus_tree,cex=0.6)
+title("Comparacion de secuencias de 20 paises")
+
+```
+Análisis de árbol filogénetico:
+Podemos observar que los pares de secuencias con mayores similitudes son:
+LR963044-MT470219
+MZ026855-MT324062
+MW332230-MT511075
+Debido a que la distancia entre ellos es más corta que la comparada con los demás. Mientras que la secuencia MW642250 parece ser laque tiene menos similitudes al tener una distancia mayor. De igual forma, observamos que la secuencia LR963044 está muy distanciada de la secuencia MT889692.
+Podemos observar que al inicio de nuestro árbol en la parte izquierda se abren 3 clasificaciones que separan nuestro grupo de secuencias.
+El último grupo tiene diferencias más pequeñas entre ellos puesto que su distancia es menor, en el segundo grupo algunos tienen distancias muy grandes mientras que otros parecen ser más similares pues tienen distancias más cortas. Finalmente, el primer grupo es el que tiene menos ramas pero también tiene las ramas más largas indicando que son los que tienen menos similitudes entre ellos.
+Podemos decir que este árbol filogenetico nos ayuda a darnos cuenta cuales variantes de virus tienen más similitudes, y que a pesar de que todos son secuencias de SARS COV 2 en humanos existen muchas variantes y cambios en su secuencia de nucleotidos lo que hace que los síntomas no todos los sufran igual y los haga resistentes a difernetes climas o factores externos. Los más cercanos probablemente causen los mismos sintomas y sean la misma variante del virus, mientras que los que cuentan con más diferencias pueden tener una mayor tasa de viralidad o pueden causar sintomas más fuertes. 
+```{r}
+#Citamos las librerias
+citation("seqinr")
+citation("RColorBrewer")
+citation("Biostrings")
+citation("adegenet")
+citation("ape")
+citation("ggtree")
+citation("DECIPHER")
+citation("viridis")
+citation("ggplot2")
+citation("msa")
+```
+Referencias:
+Nicola Decaroa, Alessio Lorussob. Novel human coronavirus (SARS-CoV-2): A lesson from animal coronaviruses. Veterinary Microbiology 244 (2020) 108693.
+
+Alison E. Stouta, Nicole M. Andréa, Javier A. Jaimesa, Jean K. Milletb, Gary R. Whittakera,c,d, Coronaviruses in cats and other companion animals: Where does SARS-CoV-2/COVID-19 fit? Veterinary Microbiology 247 (2020) 108777
+
+Reza Falak y colaboradores. Immunopathological similarities between COVID-19 and influenza_ Investigating the consequences of Co-infection 
+
+Houcemeddine Othman y colaboradores. Interaction of the spike protein RBD from SARS-CoV-2 with ACE2: Similarity with SARS-CoV, hot-spot analysis and effect of the receptor polymorphism. H. Othman et al. / Biochemical and Biophysical Research Communications
